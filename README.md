@@ -6,7 +6,7 @@ The goal is to ensure safe passage of animals (represented by the agent) while a
 
 1. Clone this repository
     ```bash
-    git clone <repoLink>
+    git clone https://github.com/kayc0des/Wildlife-Corridor-Management
     ```
 2. cd into the working directory
     ```bash
