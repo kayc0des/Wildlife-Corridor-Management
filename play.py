@@ -1,55 +1,51 @@
 import time
 import gymnasium as gym
 from stable_baselines3 import DQN
-
+from stable_baselines3.common.vec_env import DummyVecEnv
 WildlifeCorridorEnv = __import__('custEnv').WildlifeCorridorEnv
 
 
 def main():
-    # Initialize environment
-    env = WildlifeCorridorEnv()
+    """
+    Test the trained reinforcement learning model on the Wildlife Corridor environment.
+    """
+    # Load the custom environment and wrap it in a DummyVecEnv
+    env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(WildlifeCorridorEnv(), max_episode_steps=100)])
 
-    # Load model (as you've confirmed it's loading properly)
-    model = DQN.load("models/wildlife_corridor_policy.zip")
+    # Load the trained model
+    try:
+        model = DQN.load("models/wildlife_corridor_policy.zip")
+        print("Model loaded successfully!")
+    except FileNotFoundError:
+        print("Error: Trained model not found. Make sure to train the model using train.py first.")
+        return
 
-    obs, info = env.reset()  # Reset the environment and get the initial observation
-    
-    # Ensure obs is a tuple for handling later in your environment logic
-    obs = tuple(obs)
+    # Test the model
+    n_episodes = 5  # Number of episodes to simulate
+    for episode in range(n_episodes):
+        obs = env.reset()
+        total_reward = 0
+        done = False
+        steps = 0
 
-    print("Model loaded successfully!")
-    
-    done = False
-    episode = 1
-    while not done:
-        print(f"--- Episode {episode} ---")
-        
-        # Get action from your model (ensure that the action is valid)
-        action = model.predict(obs)  # Assuming `model.predict` gives the next action
-        
-        # Check for any errors in action or observation
-        try:
-            # Take the step in the environment with the action
-            obs, reward, terminated, truncated, info = env.step(action)
-            
-            # Ensure the observation is a tuple if it's being passed back into any set or dict
-            obs = tuple(obs)  # Convert to tuple if it's numpy.ndarray
+        print(f"\n--- Episode {episode + 1} ---")
+        while not done:
+            # Use the model to predict the best action
+            action, _ = model.predict(obs, deterministic=True)
 
-            if terminated or truncated:
-                done = True
-        
-        except TypeError as e:
-            print(f"Error encountered: {e}")
-            # Handle the TypeError by adjusting agent position if necessary
-            obs = tuple(obs)  # Convert to tuple to avoid numpy.ndarray issues
-            continue
-        
-        # Optionally, render the environment if needed
-        env.render()
+            # Take the action in the environment
+            obs, reward, done, info = env.step(action)
+            total_reward += reward[0]  # Reward is a list in VecEnv
+            steps += 1
 
-        episode += 1
-    
+            # Render the environment (visualize the simulation)
+            env.render()
+            time.sleep(0.1)  # Add delay for better visualization
+
+        print(f"Episode {episode + 1} - Total Reward: {total_reward} - Steps Taken: {steps}")
+
     env.close()
+
 
 if __name__ == "__main__":
     main()
