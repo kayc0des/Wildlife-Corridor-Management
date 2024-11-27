@@ -2,6 +2,7 @@ import os
 import gymnasium as gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 WildlifeCorridorEnv = __import__('custEnv').WildlifeCorridorEnv
 
@@ -14,14 +15,11 @@ def main():
     os.makedirs("logs", exist_ok=True)
 
     # Initialize the custom environment
-    env = WildlifeCorridorEnv()
+    def make_env():
+        return gym.wrappers.TimeLimit(WildlifeCorridorEnv(), max_episode_steps=100)
 
-    # Create evaluation environment
-    eval_env = WildlifeCorridorEnv()
-
-    # Wrap the environments in Gym's wrapper for compatibility
-    env = gym.wrappers.TimeLimit(env, max_episode_steps=100)
-    eval_env = gym.wrappers.TimeLimit(eval_env, max_episode_steps=100)
+    env = DummyVecEnv([make_env])  # Wrap training environment in DummyVecEnv
+    eval_env = DummyVecEnv([make_env])  # Wrap evaluation environment in DummyVecEnv
 
     # Initialize the DQN agent
     model = DQN(
