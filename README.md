@@ -125,4 +125,4 @@ The environment is rendered visually using OpenCV. The agent, obstacles, and goa
 
 ## Conclusion
 
-During the testing phase with play.py, although the agent experienced oscillations in its movements, it successfully reached the goal in some episodes. This indicates that while the agent's performance may need further refinement, the model has learned some successful strategies for navigating the environment and achieving the goal. With additional training or fine-tuning, the agent's behavior could be improved to handle more complex scenarios and achieve more consistent results.
+During the testing phase with play.py, although the agent experienced oscillations in its movements, it successfully reached the goal in some episodes - Like in `episodes 4 of the terminal output above`. This indicates that while the agent's performance may need further refinement, the model has learned some successful strategies for navigating the environment and achieving the goal. With additional training or fine-tuning, the agent's behavior could be improved to handle more complex scenarios and achieve more consistent results.
