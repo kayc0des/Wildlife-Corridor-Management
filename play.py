@@ -64,7 +64,7 @@ def main():
     logger = setup_logger()
 
     # Configuration
-    model_path = "models/wildlife_corridor_policy.zip"
+    model_path = "models/best_model/best_model.zip"
     n_episodes = 5  # Number of episodes to simulate
     render_mode = "human"
 
