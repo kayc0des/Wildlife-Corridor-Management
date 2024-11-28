@@ -10,7 +10,12 @@ def main():
     Test the trained reinforcement learning model on the Wildlife Corridor environment.
     """
     # Load the custom environment and wrap it in a DummyVecEnv
-    env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(WildlifeCorridorEnv(), max_episode_steps=100)])
+    # env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(WildlifeCorridorEnv(), max_episode_steps=100)])
+
+    def make_env():
+        return WildlifeCorridorEnv(render_mode="human")
+
+    env = DummyVecEnv([make_env])
 
     # Load the trained model
     try:
