@@ -37,7 +37,7 @@ def main():
             action, _ = model.predict(obs, deterministic=True)
 
             # Take the action in the environment
-            obs, reward, terminated, truncated = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(action)
             total_reward += reward
             steps += 1
 
