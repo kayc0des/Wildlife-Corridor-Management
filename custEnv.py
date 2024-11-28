@@ -1,121 +1,146 @@
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
+import cv2
+import random
 
 
 class WildlifeCorridorEnv(gym.Env):
     """
     Custom Environment for Wildlife Corridor Management.
-    The agent represents an animal navigating a grid-based landscape.
+    The agent navigates a grid while avoiding obstacles and reaching the goal.
     """
 
     metadata = {"render_modes": ["human"], "render_fps": 10}
 
-    def __init__(self, render_mode=None):
-        """
-        Initialize the environment.
-        """
+    def __init__(self, grid_size=10, num_obstacles=10, render_mode=None):
         super(WildlifeCorridorEnv, self).__init__()
-        
-        self.grid_size = 10  # 10x10 grid
-        self.num_obstacles = 10  # Number of obstacles
-        
+
+        self.grid_size = grid_size
+        self.num_obstacles = num_obstacles
+        self.render_mode = render_mode
+
         # Define action space: 0=Up, 1=Right, 2=Down, 3=Left
         self.action_space = spaces.Discrete(4)
-        
-        # Observation space: Agent's position on the grid
+
+        # Define observation space: Grid representation around the agent
         self.observation_space = spaces.Box(
-            low=0, high=self.grid_size - 1, shape=(2,), dtype=np.int32
+            low=0,
+            high=1,
+            shape=(grid_size, grid_size, 3),  # Grid with layers: agent, obstacles, goal
+            dtype=np.float32,
         )
-        
-        # Rendering setup
-        self.render_mode = render_mode
+
+        # Initialize attributes
         self.agent_pos = None
         self.start_pos = None
         self.goal_pos = None
         self.obstacles = None
 
+        # Visualization parameters
+        self.cell_size = 50  # Size of each grid cell in pixels
+        self.window_size = (
+            grid_size * self.cell_size,
+            grid_size * self.cell_size,
+        )  # Window dimensions
+
     def reset(self, seed=None, options=None):
-        """
-        Reset the environment to its initial state.
-        """
         super().reset(seed=seed)
-        
+
         # Randomize start and goal positions
         self.start_pos = tuple(np.random.randint(0, self.grid_size, size=2))
         self.goal_pos = tuple(np.random.randint(0, self.grid_size, size=2))
-        
+
         # Ensure start and goal positions are different
         while self.goal_pos == self.start_pos:
             self.goal_pos = tuple(np.random.randint(0, self.grid_size, size=2))
-        
+
         # Randomize obstacle positions
-        self.obstacles = set()
-        while len(self.obstacles) < self.num_obstacles:
-            obs = tuple(np.random.randint(0, self.grid_size, size=2))
-            
-            # Avoid placing obstacles at the start or goal positions
-            if obs != self.start_pos and obs != self.goal_pos:
-                self.obstacles.add(obs)
-        
+        all_positions = set((x, y) for x in range(self.grid_size) for y in range(self.grid_size))
+        all_positions.discard(self.start_pos)
+        all_positions.discard(self.goal_pos)
+        self.obstacles = set(random.sample(all_positions, min(self.num_obstacles, len(all_positions))))
+
         self.agent_pos = list(self.start_pos)
-        return np.array(self.agent_pos, dtype=np.int32), {}
+        return self._get_observation(), {}
 
     def step(self, action):
-        """
-        Take a step in the environment.
-        """
-        # Map actions to movements
         moves = {
             0: (-1, 0),  # Up
             1: (0, 1),   # Right
             2: (1, 0),   # Down
             3: (0, -1),  # Left
         }
-        
+
         # Calculate new position
         new_pos = [
             self.agent_pos[0] + moves[action][0],
             self.agent_pos[1] + moves[action][1],
         ]
-        
+
         # Keep agent within bounds
         new_pos[0] = np.clip(new_pos[0], 0, self.grid_size - 1)
         new_pos[1] = np.clip(new_pos[1], 0, self.grid_size - 1)
-        
-        # Update agent position if not hitting an obstacle
+
+        # Update position if not hitting an obstacle
         if tuple(new_pos) not in self.obstacles:
             self.agent_pos = new_pos
-        
-        # Check if goal is reached
-        done = tuple(self.agent_pos) == self.goal_pos
-        reward = 10 if done else -1  # Reward for reaching goal; penalty otherwise
-        
-        # Return step information
-        return np.array(self.agent_pos, dtype=np.int32), reward, done, False, {}
 
-    def render(self):
+        # Check for goal
+        done = tuple(self.agent_pos) == self.goal_pos
+        distance_to_goal = np.linalg.norm(
+            np.array(self.goal_pos) - np.array(self.agent_pos)
+        )
+        reward = 10 if done else -distance_to_goal * 0.1  # Higher reward closer to goal
+
+        return self._get_observation(), reward, done, False, {}
+
+    def _get_observation(self):
         """
-        Render the environment (simple text-based representation).
+        Create a grid representation of the environment.
+        Layer 1: Agent
+        Layer 2: Obstacles
+        Layer 3: Goal
         """
-        if self.render_mode == "human":
-            grid = [[" " for _ in range(self.grid_size)] for _ in range(self.grid_size)]
-            
-            # Place obstacles
-            for obs in self.obstacles:
-                grid[obs[0]][obs[1]] = "X"
-            
-            # Place agent
-            grid[self.agent_pos[0]][self.agent_pos[1]] = "A"
-            
-            # Place goal
-            grid[self.goal_pos[0]][self.goal_pos[1]] = "G"
-            
-            print("\n".join(["".join(row) for row in grid]))
-            print("-" * 20)
+        grid = np.zeros((self.grid_size, self.grid_size, 3), dtype=np.float32)
+        grid[self.agent_pos[0], self.agent_pos[1], 0] = 1  # Agent layer
+        for obs in self.obstacles:
+            grid[obs[0], obs[1], 1] = 1  # Obstacle layer
+        grid[self.goal_pos[0], self.goal_pos[1], 2] = 1  # Goal layer
+        return grid
+
+    def render(self, mode="human"):
+        """
+        Render the environment using OpenCV.
+        """
+        # Create a blank frame
+        frame = np.zeros((self.window_size[1], self.window_size[0], 3), dtype=np.uint8)
+
+        # Draw grid elements
+        for x in range(self.grid_size):
+            for y in range(self.grid_size):
+                top_left = (y * self.cell_size, x * self.cell_size)
+                bottom_right = ((y + 1) * self.cell_size, (x + 1) * self.cell_size)
+
+                if (x, y) in self.obstacles:  # Obstacles
+                    color = (0, 255, 0)  # Green
+                elif [x, y] == self.agent_pos:  # Agent
+                    color = (0, 0, 255)  # Red
+                elif (x, y) == self.goal_pos:  # Goal
+                    color = (255, 0, 0)  # Blue
+                else:  # Empty cell
+                    color = (200, 200, 200)  # Light gray
+
+                cv2.rectangle(frame, top_left, bottom_right, color, -1)
+                cv2.rectangle(frame, top_left, bottom_right, (50, 50, 50), 1)  # Grid lines
+
+        # Display the frame
+        if mode == "human":
+            cv2.imshow("Wildlife Corridor Environment", frame)
+            cv2.waitKey(1)
 
     def close(self):
         """
-        Close the environment.
+        Cleanup OpenCV windows.
         """
-        pass
+        cv2.destroyAllWindows()
