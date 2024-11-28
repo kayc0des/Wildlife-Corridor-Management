@@ -2,6 +2,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
+
 class WildlifeCorridorEnv(gym.Env):
     """
     Custom Environment for Wildlife Corridor Management.
@@ -17,11 +18,7 @@ class WildlifeCorridorEnv(gym.Env):
         super(WildlifeCorridorEnv, self).__init__()
         
         self.grid_size = 10  # 10x10 grid
-        self.start_pos = (0, 0)  # Agent starts at the top-left corner
-        self.goal_pos = (9, 9)  # Safe zone at the bottom-right corner
-        
-        # Define obstacles (e.g., human settlements, predators)
-        self.obstacles = [(3, 3), (4, 4), (5, 5), (2, 8), (8, 2)]
+        self.num_obstacles = 10  # Number of obstacles
         
         # Define action space: 0=Up, 1=Right, 2=Down, 3=Left
         self.action_space = spaces.Discrete(4)
@@ -34,12 +31,33 @@ class WildlifeCorridorEnv(gym.Env):
         # Rendering setup
         self.render_mode = render_mode
         self.agent_pos = None
+        self.start_pos = None
+        self.goal_pos = None
+        self.obstacles = None
 
     def reset(self, seed=None, options=None):
         """
         Reset the environment to its initial state.
         """
         super().reset(seed=seed)
+        
+        # Randomize start and goal positions
+        self.start_pos = tuple(np.random.randint(0, self.grid_size, size=2))
+        self.goal_pos = tuple(np.random.randint(0, self.grid_size, size=2))
+        
+        # Ensure start and goal positions are different
+        while self.goal_pos == self.start_pos:
+            self.goal_pos = tuple(np.random.randint(0, self.grid_size, size=2))
+        
+        # Randomize obstacle positions
+        self.obstacles = set()
+        while len(self.obstacles) < self.num_obstacles:
+            obs = tuple(np.random.randint(0, self.grid_size, size=2))
+            
+            # Avoid placing obstacles at the start or goal positions
+            if obs != self.start_pos and obs != self.goal_pos:
+                self.obstacles.add(obs)
+        
         self.agent_pos = list(self.start_pos)
         return np.array(self.agent_pos, dtype=np.int32), {}
 
