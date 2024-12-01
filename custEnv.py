@@ -63,13 +63,13 @@ class WildlifeCorridorEnv(gym.Env):
         Define theme-specific effects on movement and rewards.
         """
         if self.theme == "forest":
-            return {"penalty": 0.2, "reward": 5, "color": (34, 139, 34)}  # Forest green
+            return {"penalty": 0.2, "reward": 5, "color": (34, 139, 34)}
         elif self.theme == "desert":
-            return {"penalty": 0.5, "reward": 3, "color": (237, 201, 175)}  # Sandy brown
+            return {"penalty": 0.5, "reward": 3, "color": (237, 201, 175)}
         elif self.theme == "water":
-            return {"penalty": 1.0, "reward": 2, "color": (0, 105, 148)}  # Water blue
+            return {"penalty": 1.0, "reward": 2, "color": (0, 105, 148)}
         else:
-            return {"penalty": 0, "reward": 0, "color": (200, 200, 200)}  # Default gray
+            return {"penalty": 0, "reward": 0, "color": (200, 200, 200)}
 
     def _get_observation(self):
         """
