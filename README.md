@@ -11,6 +11,19 @@ The project consists of three main files:
 
 ## Environment Overview
 
+|   | 0  | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  |
+|---|----|----|----|----|----|----|----|----|----|----|
+| 0 | **A** |    |    |    |    |    |    |    |    |    |
+| 1 |      |    |    |    |    |    |    |    |    |    |
+| 2 |      |    | **X** | **X** | **X** |    |    |    |    |    |
+| 3 |      |    |    |    |    |    |    |    |    |    |
+| 4 |      |    |    |    |    |    |    |    |    |    |
+| 5 |      |    |    |    |    | **X** | **X** | **X** |    |    |
+| 6 |      |    |    |    |    |    |    |    |    |    |
+| 7 |      |    | **X** |    |    |    |    |    |    |    |
+| 8 |      |    | **X** | **X** |    |    |    |    |    |    |
+| 9 |      |    |    |    |    |    |    |    |    | **G** |
+
 The custom environment simulates a wildlife corridor with the following components:
 
 - **Grid Layout**: A grid of size `10x10` (modifiable) where the agent moves.
